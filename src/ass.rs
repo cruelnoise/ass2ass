@@ -682,63 +682,36 @@ mod info {
     }
     impl fmt::Display for Header<'_> {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            let mut v = Vec::<String>::new();
             let yesno = |x| match x {
                 true => "yes",
                 false => "no",
             };
-            if let Some(x) = self.title {
-                v.push(format!("Title: {}", x))
+            macro_rules! field {
+                ($field:ident, $name:literal) => {
+                    if let Some(x) = self.$field {
+                        write!(f, concat!($name, ": {}"), x)?;
+                    }
+                };
             }
-            if let Some(x) = self.script_type {
-                v.push(format!("ScriptType: {}", x))
-            }
-            if let Some(x) = self.wrap_style {
-                v.push(format!("WrapStyle: {}", x))
-            }
-            if let Some(x) = self.play_res_x {
-                v.push(format!("PlayResX: {}", x))
-            }
-            if let Some(x) = self.play_res_y {
-                v.push(format!("PlayResY: {}", x))
-            }
+            field!(title, "Title");
+            field!(script_type, "ScriptType");
+            field!(wrap_style, "WrapStyle");
+            field!(play_res_x, "PlayResX");
+            field!(play_res_y, "PlayResY");
             if let Some(x) = self.scaled_border_and_shadow {
-                v.push(format!("ScaledBorderAndShadow: {}", yesno(x)))
+                write!(f, "ScaledBorderAndShadow: {}", yesno(x))?;
             }
-            if let Some(x) = self.ycbcr_matrix {
-                v.push(format!("YCbCr Matrix: {}", x))
-            }
-            if let Some(x) = self.script {
-                v.push(format!("Original Script: {}", x))
-            }
-            if let Some(x) = self.translation {
-                v.push(format!("Original Translation: {}", x))
-            }
-            if let Some(x) = self.editing {
-                v.push(format!("Original Editing: {}", x))
-            }
-            if let Some(x) = self.timing {
-                v.push(format!("Original Timing: {}", x))
-            }
-            if let Some(x) = self.synch_point {
-                v.push(format!("Synch Point: {}", x))
-            }
-            if let Some(x) = self.updated_by {
-                v.push(format!("Script Updated By: {}", x))
-            }
-            if let Some(x) = self.update_details {
-                v.push(format!("Update Details: {}", x))
-            }
-            if let Some(x) = self.kerning {
-                v.push(format!("Kerning: {}", x))
-            }
-            if let Some(x) = self.language {
-                v.push(format!("Language: {}", x))
-            }
-            write! {
-                f,"{}",v.join("\n")
-
-            }
+            field!(ycbcr_matrix, "YCbCr Matrix");
+            field!(script, "Original Script");
+            field!(translation, "Original Translation");
+            field!(editing, "Original Editing");
+            field!(timing, "Original Timing");
+            field!(synch_point, "Synch Point");
+            field!(updated_by, "Script Updated By");
+            field!(update_details, "Update Details");
+            field!(kerning, "Kerning");
+            field!(language, "Language");
+            Ok(())
         }
     }
     impl<'a> Header<'a> {
