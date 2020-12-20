@@ -1,9 +1,10 @@
 use self::Token::*;
 use super::common::{Alignment, BorderStyle, Encoding, ABGR};
 use super::AssParseError::{self, BadAssBool, BadStyleToken, StyleNotMatchFormat};
+use parse_display::Display;
 use std::{fmt, str::FromStr};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Display, Debug, Clone, Copy, PartialEq)]
 enum Token {
     Name,
     Fontname,
@@ -28,39 +29,6 @@ enum Token {
     MarginR,
     MarginV,
     Encoding,
-}
-impl fmt::Display for Token {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match *self {
-                Name => "Name",
-                Fontname => "Fontname",
-                Fontsize => "Fontsize",
-                PrimaryColour => "PrimaryColour",
-                SecondaryColour => "SecondaryColour",
-                OutlineColour => "OutlineColour",
-                BackColour => "BackColour",
-                Bold => "Bold",
-                Italic => "Italic",
-                Underline => "Underline",
-                StrikeOut => "StrikeOut",
-                ScaleX => "ScaleX",
-                ScaleY => "ScaleY",
-                Spacing => "Spacing",
-                Angle => "Angle",
-                BorderStyle => "BorderStyle",
-                Outline => "Outline",
-                Shadow => "Shadow",
-                Alignment => "Alignment",
-                MarginL => "MarginL",
-                MarginR => "MarginR",
-                MarginV => "MarginV",
-                Encoding => "Encoding",
-            }
-        )
-    }
 }
 impl FromStr for Token {
     type Err = AssParseError;
