@@ -458,7 +458,7 @@ mod common {
         }
     }
 
-    pub fn split_line<'a>(s: &'a str) -> Result<(&'a str, &'a str), AssParseError> {
+    pub fn split_line(s: &str) -> Result<(&str, &str), AssParseError> {
         lazy_static! {
             static ref S_RE: Regex = Regex::new(r"^(.+):\s+(.+)$").unwrap();
         }
@@ -1114,7 +1114,7 @@ mod event {
     use self::Token::*;
     use super::common::Timecode;
     use super::AssParseError::{self, EventTooLong, EventTooShort, BadEventToken, EventNotMatchFormat, TextNotLastToken};
-    use std::{fmt, str::FromStr};
+    use std::{fmt, str::FromStr, cmp::Ordering};
 
     #[derive(Debug, Clone, Copy, PartialEq)]
     pub enum Token {
@@ -1192,7 +1192,7 @@ mod event {
             for t in s.split(',') {
                 f.push(t.trim().parse()?);
             }
-            if f.0.len() < 1 || *f.0.last().unwrap() != Text {
+            if f.0.is_empty() || *f.0.last().unwrap() != Text {
                 return Err(TextNotLastToken);
             }
             Ok(f)
@@ -1285,7 +1285,7 @@ mod event {
                 res.format = v.clone();
             }
             let mut data = Vec::<&str>::new();
-            let iter = s.split(",");
+            let iter = s.split(',');
             for (n, v) in iter.enumerate() {
                 if n < res.format.0.len() - 1 {
                     data.push(v)
@@ -1295,12 +1295,10 @@ mod event {
                 }
             }
             data.push(&s[data.join(",").len() + 1..]);
-            if data.len() < res.format.0.len() {
-                return Err(EventTooShort);
-            }
-            else if data.len() > res.format.0.len() {
-                eprintln!("{:?}", data);
-                return Err(EventTooLong);
+            match data.len().cmp(&res.format.0.len()) {
+                Ordering::Greater => return Err(EventTooLong),
+                Ordering::Less => return Err(EventTooShort),
+                Ordering::Equal => (),
             }
             for (token, value) in res.format.0.iter().zip(data.iter()) {
                 match token {

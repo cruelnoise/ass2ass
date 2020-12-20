@@ -16,12 +16,12 @@ impl Config {
         }
 
         let input = args[1].clone();
-        if input.ends_with(".ass") == false {
+        if !input.ends_with(".ass") {
             return Err(format!("file extension must be .ass : {}", input));
         }
 
         let output = args[2].clone();
-        if output.ends_with(".ass") == false {
+        if !output.ends_with(".ass") {
             return Err(format!("file extension must be .ass : {}", output));
         }
 
@@ -42,9 +42,9 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn strip_bom<'a>(s: &'a str) -> &'a str {
-    if s.starts_with("\u{feff}") {
-        &s[3..]
+fn strip_bom(s: &str) -> &str {
+    if let Some(r) = s.strip_prefix("\u{feff}") {
+        r
     }
     else {
         s
