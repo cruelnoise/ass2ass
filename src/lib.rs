@@ -10,22 +10,23 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(args: &[String]) -> Result<Config, String> {
+    pub fn new(args: &[String]) -> Result<Self, String> {
         if args.len() != 3 {
             return Err("not enough arguments".to_owned());
         }
 
-        let input = args[1].clone();
+        let input = &args[1];
         if !input.ends_with(".ass") {
             return Err(format!("file extension must be .ass : {}", input));
         }
 
-        let output = args[2].clone();
+        let output = &args[2];
         if !output.ends_with(".ass") {
             return Err(format!("file extension must be .ass : {}", output));
         }
 
-        Ok(Config { input, output })
+        let (input, output) = (input.into(), output.into());
+        Ok(Self { input, output })
     }
 }
 
@@ -43,10 +44,5 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 }
 
 fn strip_bom(s: &str) -> &str {
-    if let Some(r) = s.strip_prefix("\u{feff}") {
-        r
-    }
-    else {
-        s
-    }
+    s.strip_prefix("\u{feff}").unwrap_or(s)
 }
