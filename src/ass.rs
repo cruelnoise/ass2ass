@@ -54,7 +54,9 @@ impl fmt::Display for AssParseError {
             BadWrapStyle => "Invalid wrap style value.".to_owned(),
             BadYCbCrMatrix => "Invalid or YCbCr Matrix value.".to_owned(),
             EnteredNoneState => "Parser recieved illegal None state".to_owned(),
-            EncounteredIllegalHeader => "Encountered a header while in an incompatible state.".to_owned(),
+            EncounteredIllegalHeader => {
+                "Encountered a header while in an incompatible state.".to_owned()
+            }
             EventNotMatchFormat(t) => format!("Event line does not match format at token {}", t),
             EventTooShort => "Event line does not have entry for every field in Format.".to_owned(),
             EventTooLong => "Event has more fields than Format defines.".to_owned(),
@@ -63,11 +65,7 @@ impl fmt::Display for AssParseError {
             TextNotLastToken => "The last token in an event format must be Text".to_owned(),
             UnknownSection => "Line is in unkown section header.".to_owned(),
         };
-        write!(
-            f,
-            "{}",
-            s
-        )
+        write!(f, "{}", s)
     }
 }
 impl Error for AssParseError {}
@@ -87,13 +85,23 @@ impl fmt::Display for AssTrack<'_> {
         v.push(self.header.to_string());
         v.push("".to_owned());
         v.push("[V4+ Styles]".to_owned());
-        v.push(self.styleformat.as_ref().unwrap_or(&style::Format::default()).to_string());
+        v.push(
+            self.styleformat
+                .as_ref()
+                .unwrap_or(&style::Format::default())
+                .to_string(),
+        );
         for style in &self.styles {
             v.push(style.to_string());
         }
         v.push("".to_owned());
         v.push("[Events]".to_owned());
-        v.push(self.eventformat.as_ref().unwrap_or(&event::Format::default()).to_string());
+        v.push(
+            self.eventformat
+                .as_ref()
+                .unwrap_or(&event::Format::default())
+                .to_string(),
+        );
         for event in &self.events {
             v.push(event.to_string());
         }
@@ -1113,8 +1121,10 @@ mod style {
 mod event {
     use self::Token::*;
     use super::common::Timecode;
-    use super::AssParseError::{self, EventTooLong, EventTooShort, BadEventToken, EventNotMatchFormat, TextNotLastToken};
-    use std::{fmt, str::FromStr, cmp::Ordering};
+    use super::AssParseError::{
+        self, BadEventToken, EventNotMatchFormat, EventTooLong, EventTooShort, TextNotLastToken,
+    };
+    use std::{cmp::Ordering, fmt, str::FromStr};
 
     #[derive(Debug, Clone, Copy, PartialEq)]
     pub enum Token {
@@ -1289,8 +1299,7 @@ mod event {
             for (n, v) in iter.enumerate() {
                 if n < res.format.0.len() - 1 {
                     data.push(v)
-                }
-                else {
+                } else {
                     break;
                 }
             }
@@ -1307,9 +1316,15 @@ mod event {
                     End => res.end_time = value.parse().or(Err(EventNotMatchFormat(End)))?,
                     Style => res.style = Some(value),
                     Name => res.actor = Some(value),
-                    MarginL => res.margin_l = value.parse().or(Err(EventNotMatchFormat(MarginL)))?,
-                    MarginR => res.margin_r = value.parse().or(Err(EventNotMatchFormat(MarginR)))?,
-                    MarginV => res.margin_v = value.parse().or(Err(EventNotMatchFormat(MarginV)))?,
+                    MarginL => {
+                        res.margin_l = value.parse().or(Err(EventNotMatchFormat(MarginL)))?
+                    }
+                    MarginR => {
+                        res.margin_r = value.parse().or(Err(EventNotMatchFormat(MarginR)))?
+                    }
+                    MarginV => {
+                        res.margin_v = value.parse().or(Err(EventNotMatchFormat(MarginV)))?
+                    }
                     Effect => res.effect = Some(value),
                     Text => res.text = Some(value),
                 };

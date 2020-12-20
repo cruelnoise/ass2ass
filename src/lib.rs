@@ -45,8 +45,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 fn strip_bom(s: &str) -> &str {
     if let Some(r) = s.strip_prefix("\u{feff}") {
         r
-    }
-    else {
+    } else {
         s
     }
 }
