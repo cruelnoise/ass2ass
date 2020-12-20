@@ -3,7 +3,9 @@
 // exports the AssTrack type
 // also some errors I guess? I don't know how to organize Rust projects.
 
-use std::{error::Error, fmt};
+use std::fmt;
+
+use thiserror::Error;
 
 //------------------------------------------------------------------------------
 // errors
@@ -11,64 +13,53 @@ use std::{error::Error, fmt};
 
 // todo: make errors better
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Error, Debug, Clone, Copy, PartialEq)]
 pub enum AssParseError {
+    #[error("Invalid alignment value.")]
     BadAlignment,
+    #[error("Invalid ass-style bool. -1 is true, 0 is false.")]
     BadAssBool,
+    #[error("Invalid border style value.")]
     BadBorderStyle,
+    #[error("Invalid colour code.")]
     BadColourCode,
+    #[error("Invalid data for field type.")]
     BadConfigData,
+    #[error("Unkown or unsupported config field.")]
     BadConfigField,
+    #[error("Invalid encoding value.")]
     BadEncoding,
+    #[error("Invalid event token in format line.")]
     BadEventToken,
+    #[error("Line does not match ASS Field: Data format.")]
     BadLineFormat,
+    #[error("Invalid style token in format line.")]
     BadStyleToken,
+    #[error("Invalid time code.")]
     BadTimeCode,
+    #[error("Invalid wrap style value.")]
     BadWrapStyle,
+    #[error("Invalid or YCbCr Matrix value.")]
     BadYCbCrMatrix,
+    #[error("Parser recieved illegal None state")]
     EnteredNoneState,
+    #[error("Encountered a header while in an incompatible state.")]
     EncounteredIllegalHeader,
+    #[error("Event line does not match format at token {0}")]
     EventNotMatchFormat(event::Token),
+    #[error("Event line does not have entry for every field in Format.")]
     EventTooShort,
+    #[error("Event has more fields than Format defines.")]
     EventTooLong,
+    #[error("Attempted to parse line while in None state.")]
     NoParserState,
+    #[error("Style line does not match format.")]
     StyleNotMatchFormat,
+    #[error("The last token in an event format must be Text")]
     TextNotLastToken,
+    #[error("Line is in unkown section header.")]
     UnknownSection,
 }
-impl fmt::Display for AssParseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use AssParseError::*;
-        let s = match *self {
-            BadAlignment => "Invalid alignment value.".to_owned(),
-            BadAssBool => "Invalid ass-style bool. -1 is true, 0 is false.".to_owned(),
-            BadBorderStyle => "Invalid border style value.".to_owned(),
-            BadColourCode => "Invalid colour code.".to_owned(),
-            BadConfigData => "Invalid data for field type.".to_owned(),
-            BadConfigField => "Unkown or unsupported config field.".to_owned(),
-            BadEncoding => "Invalid encoding value.".to_owned(),
-            BadEventToken => "Invalid event token in format line.".to_owned(),
-            BadLineFormat => "Line does not match ASS Field: Data format.".to_owned(),
-            BadStyleToken => "Invalid style token in format line.".to_owned(),
-            BadTimeCode => "Invalid time code.".to_owned(),
-            BadWrapStyle => "Invalid wrap style value.".to_owned(),
-            BadYCbCrMatrix => "Invalid or YCbCr Matrix value.".to_owned(),
-            EnteredNoneState => "Parser recieved illegal None state".to_owned(),
-            EncounteredIllegalHeader => {
-                "Encountered a header while in an incompatible state.".to_owned()
-            }
-            EventNotMatchFormat(t) => format!("Event line does not match format at token {}", t),
-            EventTooShort => "Event line does not have entry for every field in Format.".to_owned(),
-            EventTooLong => "Event has more fields than Format defines.".to_owned(),
-            NoParserState => "Attempted to parse line while in None state.".to_owned(),
-            StyleNotMatchFormat => "Style line does not match format.".to_owned(),
-            TextNotLastToken => "The last token in an event format must be Text".to_owned(),
-            UnknownSection => "Line is in unkown section header.".to_owned(),
-        };
-        write!(f, "{}", s)
-    }
-}
-impl Error for AssParseError {}
 
 #[derive(Debug, Clone, Default)]
 pub struct AssTrack<'a> {
