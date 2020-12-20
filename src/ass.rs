@@ -71,30 +71,32 @@ pub struct AssTrack<'a> {
 }
 impl fmt::Display for AssTrack<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut v = Vec::<String>::new();
-        v.push("[Script Info]".to_owned());
-        v.push(self.header.to_string());
-        v.push("".to_owned());
-        v.push("[V4+ Styles]".to_owned());
+        let mut v = Vec::<std::borrow::Cow<str>>::new();
+        v.push("[Script Info]".into());
+        v.push(self.header.to_string().into());
+        v.push("".into());
+        v.push("[V4+ Styles]".into());
         v.push(
             self.styleformat
                 .as_ref()
                 .unwrap_or(&style::Format::default())
-                .to_string(),
+                .to_string()
+                .into(),
         );
         for style in &self.styles {
-            v.push(style.to_string());
+            v.push(style.to_string().into());
         }
-        v.push("".to_owned());
-        v.push("[Events]".to_owned());
+        v.push("".into());
+        v.push("[Events]".into());
         v.push(
             self.eventformat
                 .as_ref()
                 .unwrap_or(&event::Format::default())
-                .to_string(),
+                .to_string()
+                .into(),
         );
         for event in &self.events {
-            v.push(event.to_string());
+            v.push(event.to_string().into());
         }
         write!(f, "{}", v.join("\n"))
     }
