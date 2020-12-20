@@ -1,88 +1,65 @@
-use super::AssParseError::{
-    self, BadAlignment, BadBorderStyle, BadColourCode, BadEncoding, BadLineFormat, BadTimeCode,
-    BadWrapStyle, BadYCbCrMatrix,
-};
+use super::AssParseError;
+use enum_default::EnumDefault;
 use lazy_static::lazy_static;
+use num_enum::{IntoPrimitive, TryFromPrimitive};
+use parse_display::Display;
 use regex::Regex;
-use std::{fmt, str::FromStr, time::Duration};
+use std::{convert::TryInto, fmt, str::FromStr, time::Duration};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+macro_rules! ass_num_enum {
+    ($name:ident, $err:ident) => {
+        impl fmt::Display for $name {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                write!(f, "{}", *self as u8)
+            }
+        }
+        impl FromStr for $name {
+            type Err = AssParseError;
+            // okay yes this is a little less performant than the handwritten version but c'mon
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                let n: u8 = s.parse().map_err(|_| AssParseError::$err)?;
+                n.try_into().map_err(|_| AssParseError::$err)
+            }
+        }
+    };
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, TryFromPrimitive, IntoPrimitive, EnumDefault)]
+#[repr(u8)]
 pub enum WrapStyle {
-    Zero,
-    One,
-    Two,
-    Three,
-}
-impl fmt::Display for WrapStyle {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use self::WrapStyle::*;
-        write!(
-            f,
-            "{}",
-            match *self {
-                Zero => "0",
-                One => "1",
-                Two => "2",
-                Three => "3",
-            }
-        )
-    }
-}
-impl FromStr for WrapStyle {
-    type Err = AssParseError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        use self::WrapStyle::*;
-        Ok(match s {
-            "0" => Zero,
-            "1" => One,
-            "2" => Two,
-            "3" => Three,
-            _ => return Err(BadWrapStyle),
-        })
-    }
-}
-impl Default for WrapStyle {
-    fn default() -> Self {
-        WrapStyle::Zero
-    }
+    #[default]
+    Zero = 0,
+    One = 1,
+    Two = 2,
+    Three = 3,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+ass_num_enum!(WrapStyle, BadWrapStyle);
+
+#[derive(Display, Debug, Clone, Copy, PartialEq)]
 pub enum YCbCrMatrix {
+    #[display("TV.601")]
     Bt601TV,
+    #[display("PC.601")]
     Bt601PC,
+    #[display("TV.709")]
     Bt709TV,
+    #[display("PC.709")]
     Bt709PC,
+    #[display("TV.240M")]
     Smpte240mTV,
+    #[display("PC.240M")]
     Smpte240mPC,
+    #[display("TV.FCC")]
     FccTV,
+    #[display("PC.FCC")]
     FccPC,
-}
-impl fmt::Display for YCbCrMatrix {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use self::YCbCrMatrix::*;
-        write!(
-            f,
-            "{}",
-            match *self {
-                Bt601TV => "TV.601",
-                Bt601PC => "PC.601",
-                Bt709TV => "TV.709",
-                Bt709PC => "PC.709",
-                Smpte240mTV => "TV.240M",
-                Smpte240mPC => "PC.240M",
-                FccTV => "TV.FCC",
-                FccPC => "PC.FCC",
-            }
-        )
-    }
 }
 impl FromStr for YCbCrMatrix {
     type Err = AssParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        use self::YCbCrMatrix::*;
+        use YCbCrMatrix::*;
         Ok(match s.to_lowercase().as_str() {
             "tv.601" => Bt601TV,
             "pc.601" => Bt601PC,
@@ -92,212 +69,80 @@ impl FromStr for YCbCrMatrix {
             "pc.240m" => Smpte240mPC,
             "tv.fcc" => FccTV,
             "pc.fcc" => FccPC,
-            _ => return Err(BadYCbCrMatrix),
+            _ => return Err(AssParseError::BadYCbCrMatrix),
         })
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, TryFromPrimitive, IntoPrimitive)]
+#[repr(u8)]
 pub enum BorderStyle {
-    One,
-    Three,
-    Four,
-}
-impl fmt::Display for BorderStyle {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use self::BorderStyle::*;
-        write!(
-            f,
-            "{}",
-            match *self {
-                One => "1",
-                Three => "3",
-                Four => "4",
-            }
-        )
-    }
-}
-impl FromStr for BorderStyle {
-    type Err = AssParseError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        use self::BorderStyle::*;
-        Ok(match s {
-            "1" => One,
-            "3" => Three,
-            "4" => Four,
-            _ => return Err(BadBorderStyle),
-        })
-    }
+    One = 1,
+    Three = 3,
+    Four = 4,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+ass_num_enum!(BorderStyle, BadBorderStyle);
+
+#[derive(Debug, Clone, Copy, PartialEq, TryFromPrimitive, IntoPrimitive, EnumDefault)]
+#[repr(u8)]
 pub enum Alignment {
-    BottomLeft,
-    BottomCenter,
-    BottomRight,
-    Left,
-    Center,
-    Right,
-    TopLeft,
-    TopCenter,
-    TopRight,
-}
-impl fmt::Display for Alignment {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use self::Alignment::*;
-        write!(
-            f,
-            "{}",
-            match *self {
-                BottomLeft => "1",
-                BottomCenter => "2",
-                BottomRight => "3",
-                Left => "4",
-                Center => "5",
-                Right => "6",
-                TopLeft => "7",
-                TopCenter => "8",
-                TopRight => "9",
-            }
-        )
-    }
-}
-impl FromStr for Alignment {
-    type Err = AssParseError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        use self::Alignment::*;
-        Ok(match s {
-            "1" => BottomLeft,
-            "2" => BottomCenter,
-            "3" => BottomRight,
-            "4" => Left,
-            "5" => Center,
-            "6" => Right,
-            "7" => TopLeft,
-            "8" => TopCenter,
-            "9" => TopRight,
-            _ => return Err(BadAlignment),
-        })
-    }
-}
-impl Default for Alignment {
-    fn default() -> Self {
-        Alignment::BottomCenter
-    }
+    BottomLeft = 1,
+    #[default]
+    BottomCenter = 2,
+    BottomRight = 3,
+    Left = 4,
+    Center = 5,
+    Right = 6,
+    TopLeft = 7,
+    TopCenter = 8,
+    TopRight = 9,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+ass_num_enum!(Alignment, BadAlignment);
+
+#[derive(Debug, Clone, Copy, PartialEq, TryFromPrimitive, IntoPrimitive, EnumDefault)]
+#[repr(u8)]
 pub enum Encoding {
-    Ansi,
-    Default,
-    Symbol,
-    Mac,
-    ShiftJIS,
-    Hangeul,
-    Johab,
-    Gb2312,
-    ChineseBIG5,
-    Greek,
-    Turkish,
-    Vietnamese,
-    Hebrew,
-    Arabic,
-    Baltic,
-    Russian,
-    Thai,
-    EastEuropean,
-    Oem,
-}
-impl fmt::Display for Encoding {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use self::Encoding::*;
-        write!(
-            f,
-            "{}",
-            match *self {
-                Ansi => "0",
-                Default => "1",
-                Symbol => "2",
-                Mac => "77",
-                ShiftJIS => "128",
-                Hangeul => "129",
-                Johab => "130",
-                Gb2312 => "134",
-                ChineseBIG5 => "136",
-                Greek => "161",
-                Turkish => "162",
-                Vietnamese => "163",
-                Hebrew => "177",
-                Arabic => "178",
-                Baltic => "186",
-                Russian => "204",
-                Thai => "222",
-                EastEuropean => "238",
-                Oem => "255",
-            }
-        )
-    }
-}
-impl FromStr for Encoding {
-    type Err = AssParseError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        use self::Encoding::*;
-        Ok(match s {
-            "0" => Ansi,
-            "1" => Default,
-            "2" => Symbol,
-            "77" => Mac,
-            "128" => ShiftJIS,
-            "129" => Hangeul,
-            "130" => Johab,
-            "134" => Gb2312,
-            "136" => ChineseBIG5,
-            "161" => Greek,
-            "162" => Turkish,
-            "163" => Vietnamese,
-            "177" => Hebrew,
-            "178" => Arabic,
-            "186" => Baltic,
-            "204" => Russian,
-            "222" => Thai,
-            "238" => EastEuropean,
-            "255" => Oem,
-            _ => return Err(BadEncoding),
-        })
-    }
-}
-impl Default for Encoding {
-    fn default() -> Self {
-        Encoding::Default
-    }
+    Ansi = 0,
+    #[default]
+    Default = 1,
+    Symbol = 2,
+    Mac = 77,
+    ShiftJIS = 128,
+    Hangeul = 129,
+    Johab = 130,
+    Gb2312 = 134,
+    ChineseBIG5 = 136,
+    Greek = 161,
+    Turkish = 162,
+    Vietnamese = 163,
+    Hebrew = 177,
+    Arabic = 178,
+    Baltic = 186,
+    Russian = 204,
+    Thai = 222,
+    EastEuropean = 238,
+    Oem = 255,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+ass_num_enum!(Encoding, BadEncoding);
+
+#[derive(Display, Debug, Clone, Copy, PartialEq, Default)]
+#[display("&H{0:02X}{1:02X}{2:02X}{3:02X}")]
 pub struct ABGR(u8, u8, u8, u8);
-impl fmt::Display for ABGR {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "&H{:02X}{:02X}{:02X}{:02X}",
-            self.0, self.1, self.2, self.3
-        )
-    }
-}
 impl FromStr for ABGR {
     type Err = AssParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // TODO: both renderers are more permissive than this
         if s.len() == 10 && &s[..2] == "&H" {
-            match u32::from_str_radix(&s[2..], 16) {
-                Ok(i) => Ok(ABGR::from(i)),
-                Err(_) => Err(BadColourCode),
+            if let Ok(i) = u32::from_str_radix(&s[2..], 16) {
+                return Ok(Self::from(i));
             }
-        } else {
-            Err(BadColourCode)
         }
+
+        Err(AssParseError::BadColourCode)
     }
 }
 impl From<u32> for ABGR {
@@ -326,7 +171,7 @@ impl FromStr for Timecode {
         lazy_static! {
             static ref TS_RE: Regex = Regex::new(r"(\d):(\d{2}):(\d{2})\.(\d{2})").unwrap();
         }
-        let caps = TS_RE.captures(s).ok_or(BadTimeCode)?;
+        let caps = TS_RE.captures(s).ok_or(AssParseError::BadTimeCode)?;
         let caps: Vec<u32> = caps
             .iter()
             .skip(1)
@@ -353,6 +198,6 @@ pub fn split_line(s: &str) -> Result<(&str, &str), AssParseError> {
     lazy_static! {
         static ref S_RE: Regex = Regex::new(r"^(.+):\s+(.+)$").unwrap();
     }
-    let caps = S_RE.captures(s).ok_or(BadLineFormat)?;
+    let caps = S_RE.captures(s).ok_or(AssParseError::BadLineFormat)?;
     Ok((caps.get(1).unwrap().as_str(), caps.get(2).unwrap().as_str()))
 }
