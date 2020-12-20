@@ -3,9 +3,11 @@ use super::common::Timecode;
 use super::AssParseError::{
     self, BadEventToken, EventNotMatchFormat, EventTooLong, EventTooShort, TextNotLastToken,
 };
+use parse_display::Display;
+use smart_default::SmartDefault;
 use std::{cmp::Ordering, fmt, str::FromStr};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Display, Debug, Clone, Copy, PartialEq)]
 pub enum Token {
     Layer,
     Start,
@@ -17,26 +19,6 @@ pub enum Token {
     MarginV,
     Effect,
     Text,
-}
-impl fmt::Display for Token {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match *self {
-                Layer => "Layer",
-                Start => "Start",
-                End => "End",
-                Style => "Style",
-                Name => "Name",
-                MarginL => "MarginL",
-                MarginR => "MarginR",
-                MarginV => "MarginV",
-                Effect => "Effect",
-                Text => "Text",
-            }
-        )
-    }
 }
 impl FromStr for Token {
     type Err = AssParseError;
@@ -103,14 +85,17 @@ impl Format {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, SmartDefault)]
 pub struct Event<'a> {
     format: Format,
     start_time: Timecode,
+    #[default(Timecode::from(10_000))]
     end_time: Timecode,
 
+    #[default("Dialogue")]
     descriptor: &'a str,
     layer: u32,
+    #[default(Some("Default"))]
     style: Option<&'a str>,
     actor: Option<&'a str>,
     margin_l: i32,
@@ -119,6 +104,7 @@ pub struct Event<'a> {
     effect: Option<&'a str>,
     text: Option<&'a str>,
 }
+
 impl fmt::Display for Event<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}: {}", self.descriptor, {
@@ -140,24 +126,6 @@ impl fmt::Display for Event<'_> {
                 .collect::<Vec<String>>()
                 .join(",")
         })
-    }
-}
-impl Default for Event<'_> {
-    fn default() -> Self {
-        Event {
-            format: Format::default(),
-            start_time: Timecode::from(0),
-            end_time: Timecode::from(10_000),
-            descriptor: "Dialogue",
-            layer: 0,
-            style: Some("Default"),
-            actor: None,
-            margin_l: 0,
-            margin_r: 0,
-            margin_v: 0,
-            effect: None,
-            text: None,
-        }
     }
 }
 impl<'a> Event<'a> {
