@@ -81,7 +81,7 @@ impl fmt::Display for Header<'_> {
         macro_rules! field {
             ($field:ident, $name:literal) => {
                 if let Some(x) = self.$field {
-                    write!(f, concat!($name, ": {}"), x)?;
+                    write!(f, concat!($name, ": {}\n"), x)?;
                 }
             };
         }
@@ -91,7 +91,7 @@ impl fmt::Display for Header<'_> {
         field!(play_res_x, "PlayResX");
         field!(play_res_y, "PlayResY");
         if let Some(x) = self.scaled_border_and_shadow {
-            write!(f, "ScaledBorderAndShadow: {}", yesno(x))?;
+            write!(f, "ScaledBorderAndShadow: {}\n", yesno(x))?;
         }
         field!(ycbcr_matrix, "YCbCr Matrix");
         field!(script, "Original Script");
@@ -101,7 +101,9 @@ impl fmt::Display for Header<'_> {
         field!(synch_point, "Synch Point");
         field!(updated_by, "Script Updated By");
         field!(update_details, "Update Details");
-        field!(kerning, "Kerning");
+        if let Some(x) = self.kerning {
+            write!(f, "Kerning: {}\n", yesno(x))?;
+        }
         field!(language, "Language");
         Ok(())
     }
